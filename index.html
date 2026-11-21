@@ -80,6 +80,7 @@ if (tg) { tg.ready(); tg.expand(); }
 // State: both profiles are kept; "active" is the one the EA trades with.
 const blank = () => ({ buy: true, sell: true, rows: [] });
 let st = { active: "manual", manual: blank(), atr: blank() };
+let seq = 0;   // settings version this form was opened with
 try {
   const s = new URLSearchParams(location.search).get("s");
   if (s) {
@@ -87,6 +88,7 @@ try {
     const unpack = p => ({ buy: !!p.buy, sell: !!p.sell, rows: (p.rows || []).map(r => ({
       side: r[0] === "B" ? "buy" : "sell", a: r[1], b: r[2], step: r[3] || "", max: r[4], tp: r[5],
       sl: r[6] || "", lot: r[7] })) });
+    seq = Number(v.seq) || 0;
     if (v.manual) st = { active: v.active === "atr" ? "atr" : "manual", manual: unpack(v.manual), atr: unpack(v.atr || {}) };
   }
 } catch (e) {}
@@ -222,7 +224,7 @@ document.getElementById("submit").onclick = () => {
   // compact payload: rows = [side, start, end, step, max, tp, sl, lot]
   const pack = k => ({ buy: st[k].buy, sell: st[k].sell,
     rows: res[k].map(r => [r.side === "buy" ? "B" : "S", r.a, r.b, r.step, r.max, r.tp, r.sl, r.lot]) });
-  const data = { v: 2, active: st.active, manual: pack("manual"), atr: pack("atr") };
+  const data = { v: 2, seq, active: st.active, manual: pack("manual"), atr: pack("atr") };
   if (!tg || tg.platform === "unknown") { msg("Hãy mở form từ nút trong chat với bot.\n" + JSON.stringify(data)); return; }
   tg.sendData(JSON.stringify(data));
 };
