@@ -28,7 +28,7 @@
   .sw { flex: 1; display: flex; justify-content: space-between; align-items: center;
         background: var(--card); border-radius: 10px; padding: 10px 12px; font-weight: 600; }
   .sw input { width: 22px; height: 22px; margin: 0; }
-  .note { color: var(--hint); font-size: 13px; margin: -4px 2px 12px; }
+  .note { color: var(--hint); font-size: 13px; margin: -4px 2px 12px; white-space: pre-line; }
   h2 { font-size: 14px; margin: 16px 2px 8px; letter-spacing: .04em; }
   h2.buy { color: var(--buy); } h2.sell { color: var(--sell); }
   .rowcard { background: var(--card); border-radius: 10px; padding: 10px; margin-bottom: 8px;
@@ -81,6 +81,7 @@ if (tg) { tg.ready(); tg.expand(); }
 const blank = () => ({ buy: true, sell: true, rows: [] });
 let st = { active: "manual", manual: blank(), atr: blank() };
 let seq = 0;   // settings version this form was opened with
+let atr = null, atrT = "";   // ATR(14) M5 from tg_control at button time
 try {
   const s = new URLSearchParams(location.search).get("s");
   if (s) {
@@ -89,6 +90,7 @@ try {
       side: r[0] === "B" ? "buy" : "sell", a: r[1], b: r[2], step: r[3] || "", max: r[4], tp: r[5],
       sl: r[6] || "", lot: r[7] })) });
     seq = Number(v.seq) || 0;
+    if (v.atr > 0) { atr = Number(v.atr); atrT = v.atr_t || ""; }
     if (v.manual) st = { active: v.active === "atr" ? "atr" : "manual", manual: unpack(v.manual), atr: unpack(v.atr || {}) };
   }
 } catch (e) {}
@@ -112,7 +114,8 @@ function render() {
   document.getElementById("swBuy").checked = p.buy;
   document.getElementById("swSell").checked = p.sell;
   document.getElementById("note").textContent = st.active === "atr"
-    ? "Step = ATR(14) khung M5, tính theo lệnh đang mở gần nhất."
+    ? "Step = ATR(14) khung M5, tính theo lệnh đang mở gần nhất.\n"
+      + (atr ? `ATR hiện tại: ${atr.toFixed(2)} $ (nến đóng ${atrT}, giờ server)` : "ATR hiện tại: chưa có")
     : "Step tính theo lệnh đang mở gần nhất cùng chiều.";
   for (const side of ["buy", "sell"]) {
     const box = document.getElementById(side);
