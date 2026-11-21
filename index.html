@@ -14,36 +14,60 @@
     --accent: var(--tg-theme-button-color, #2481cc);
     --accent-fg: var(--tg-theme-button-text-color, #fff);
     --danger: var(--tg-theme-destructive-text-color, #e5484d);
+    --buy: #2fa84f; --sell: #e5484d;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg);
-         font: 16px/1.4 -apple-system, system-ui, sans-serif; }
-  .card { background: var(--card); border-radius: 12px; padding: 12px; margin-bottom: 14px; }
-  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
-       color: var(--hint); margin: 0 0 8px; display: flex; justify-content: space-between; }
-  .row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-  .row span { width: 22px; color: var(--hint); font-size: 13px; text-align: right; }
-  input { flex: 1; min-width: 0; font-size: 18px; padding: 10px 12px; border-radius: 8px;
-          border: 1px solid transparent; background: var(--bg); color: var(--fg); }
-  input:focus { outline: none; border-color: var(--accent); }
-  input.bad { border-color: var(--danger); }
-  .del { border: 0; background: none; color: var(--danger); font-size: 20px; padding: 4px 8px; }
-  .add { width: 100%; border: 1px dashed var(--accent); background: none; color: var(--accent);
-         border-radius: 8px; padding: 9px; font-size: 15px; }
-  .toggle { display: flex; justify-content: space-between; align-items: center; }
-  .toggle input { flex: none; width: 22px; height: 22px; }
+  body { margin: 0; padding: 12px 12px 24px; background: var(--bg); color: var(--fg);
+         font: 15px/1.35 -apple-system, system-ui, sans-serif; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+  .tab { flex: 1; padding: 12px 8px; border-radius: 10px; border: 2px solid var(--card);
+         background: var(--card); color: var(--fg); font-size: 15px; font-weight: 600; }
+  .tab.on { border-color: var(--buy); }
+  .tab .tick { color: var(--buy); }
+  .switches { display: flex; gap: 8px; margin-bottom: 12px; }
+  .sw { flex: 1; display: flex; justify-content: space-between; align-items: center;
+        background: var(--card); border-radius: 10px; padding: 10px 12px; font-weight: 600; }
+  .sw input { width: 22px; height: 22px; margin: 0; }
+  .note { color: var(--hint); font-size: 13px; margin: -4px 2px 12px; }
+  h2 { font-size: 14px; margin: 16px 2px 8px; letter-spacing: .04em; }
+  h2.buy { color: var(--buy); } h2.sell { color: var(--sell); }
+  .rowcard { background: var(--card); border-radius: 10px; padding: 10px; margin-bottom: 8px;
+             border-left: 4px solid var(--buy); }
+  .rowcard.sell { border-left-color: var(--sell); }
+  .rowcard.bad { outline: 2px solid var(--danger); }
+  .rh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;
+        font-size: 13px; color: var(--hint); }
+  .del { border: 0; background: none; color: var(--danger); font-size: 14px; padding: 2px 4px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  label.f { display: flex; flex-direction: column; font-size: 11px; color: var(--hint); gap: 2px; }
+  label.f input { width: 100%; min-width: 0; font-size: 16px; padding: 8px; border-radius: 7px;
+                  border: 1px solid transparent; background: var(--bg); color: var(--fg); }
+  label.f input:focus { outline: none; border-color: var(--accent); }
+  label.f input.bad { border-color: var(--danger); }
+  .add { width: 100%; border: 1px dashed currentColor; background: none; border-radius: 8px;
+         padding: 9px; font-size: 14px; }
+  .add.buy { color: var(--buy); } .add.sell { color: var(--sell); }
+  #msg { color: var(--danger); font-size: 14px; margin: 14px 2px 8px; white-space: pre-line; }
   #submit { width: 100%; padding: 14px; font-size: 17px; font-weight: 600; border: 0;
             border-radius: 10px; background: var(--accent); color: var(--accent-fg); }
-  #msg { color: var(--danger); min-height: 1.4em; font-size: 14px; margin-bottom: 8px; }
 </style>
 </head>
 <body>
-  <div class="card"><h2>DCA <small id="nDca"></small></h2><div id="dca"></div>
-    <button class="add" data-list="dca">+ thêm giá DCA</button></div>
-  <div class="card"><h2>TP <small id="nTp"></small></h2><div id="tp"></div>
-    <button class="add" data-list="tp">+ thêm giá TP</button></div>
-  <div class="card"><h2>Lot</h2><div class="row"><input id="lot" inputmode="decimal" placeholder="0.01"></div></div>
-  <div class="card toggle"><label for="pause">Tạm dừng EA</label><input type="checkbox" id="pause"></div>
+  <div class="tabs">
+    <button class="tab" data-p="manual"><span class="tick"></span>Manual</button>
+    <button class="tab" data-p="atr"><span class="tick"></span>ATR</button>
+  </div>
+  <div class="switches">
+    <label class="sw" style="color:var(--buy)">Auto Buy <input type="checkbox" id="swBuy"></label>
+    <label class="sw" style="color:var(--sell)">Auto Sell <input type="checkbox" id="swSell"></label>
+  </div>
+  <div class="note" id="note"></div>
+
+  <h2 class="buy">BUY</h2><div id="buy"></div>
+  <button class="add buy" data-side="buy">+ thêm dòng Buy</button>
+  <h2 class="sell">SELL</h2><div id="sell"></div>
+  <button class="add sell" data-side="sell">+ thêm dòng Sell</button>
+
   <div id="msg"></div>
   <button id="submit">SUBMIT</button>
 
@@ -51,63 +75,145 @@
 const tg = window.Telegram && Telegram.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
 
-// Prefill: ?s=<json> from the bot (current settings)
-let cur = { dca: [""], tp: [""], lot: "", pause: false };
+// State: both profiles are kept; "active" is the one the EA trades with.
+const blank = () => ({ buy: true, sell: true, rows: [] });
+let st = { active: "manual", manual: blank(), atr: blank() };
 try {
   const s = new URLSearchParams(location.search).get("s");
-  if (s) cur = Object.assign(cur, JSON.parse(s));
+  if (s) {
+    const v = JSON.parse(s);
+    const unpack = p => ({ buy: !!p.buy, sell: !!p.sell, rows: (p.rows || []).map(r => ({
+      side: r[0] === "B" ? "buy" : "sell", a: r[1], b: r[2], step: r[3] || "", max: r[4], tp: r[5],
+      sl: r[6] || "", lot: r[7] })) });
+    if (v.manual) st = { active: v.active === "atr" ? "atr" : "manual", manual: unpack(v.manual), atr: unpack(v.atr || {}) };
+  }
 } catch (e) {}
 
-function addRow(list, val) {
-  const box = document.getElementById(list);
-  const row = document.createElement("div");
-  row.className = "row";
-  row.innerHTML = '<span></span><input inputmode="decimal" placeholder="giá"><button class="del" type="button">✕</button>';
-  row.querySelector("input").value = val ?? "";
-  row.querySelector(".del").onclick = () => { row.remove(); renumber(); };
-  box.appendChild(row);
-  renumber();
-  return row.querySelector("input");
-}
-function renumber() {
-  for (const list of ["dca", "tp"]) {
-    const rows = document.querySelectorAll("#" + list + " .row");
-    rows.forEach((r, i) => r.querySelector("span").textContent = i + 1);
-    document.getElementById(list === "dca" ? "nDca" : "nTp").textContent = rows.length + " giá";
+// Row fields. Lot blank = inherit from the row above (same side). SL blank = no SL.
+const FIELDS = [
+  ["a", "Range start"], ["b", "Range end"], ["step", "Step ($)"],
+  ["max", "Max lệnh mở"], ["tp", "TP ($) *"], ["sl", "SL ($)"],
+  ["lot", "Lot"],
+];
+
+function render() {
+  document.querySelectorAll(".tab").forEach(t => {
+    const on = t.dataset.p === st.active;
+    t.classList.toggle("on", on);
+    t.querySelector(".tick").textContent = on ? "✅ " : "";
+  });
+  const p = st[st.active];
+  document.getElementById("swBuy").checked = p.buy;
+  document.getElementById("swSell").checked = p.sell;
+  document.getElementById("note").textContent = st.active === "atr"
+    ? "Step = ATR(14) khung M5, tính theo lệnh đang mở gần nhất."
+    : "Step tính theo lệnh đang mở gần nhất cùng chiều.";
+  for (const side of ["buy", "sell"]) {
+    const box = document.getElementById(side);
+    box.innerHTML = "";
+    let n = 0;
+    p.rows.forEach((r, i) => { if (r.side === side) box.appendChild(rowEl(r, i, ++n)); });
   }
 }
-document.querySelectorAll(".add").forEach(b => b.onclick = () => addRow(b.dataset.list, "").focus());
-(cur.dca.length ? cur.dca : [""]).forEach(v => addRow("dca", v));
-(cur.tp.length ? cur.tp : [""]).forEach(v => addRow("tp", v));
-document.getElementById("lot").value = cur.lot;
-document.getElementById("pause").checked = !!cur.pause;
 
-function num(el) {
-  const v = el.value.trim().replace(",", ".");
-  if (v === "") return null;
-  const n = Number(v);
-  if (!isFinite(n) || n <= 0) { el.classList.add("bad"); throw new Error("Giá trị không hợp lệ: " + el.value); }
-  el.classList.remove("bad");
-  return n;
+function rowEl(r, idx, n) {
+  const el = document.createElement("div");
+  el.className = "rowcard " + r.side;
+  el.innerHTML = `<div class="rh"><span>#${n}</span><button class="del" type="button">✕ xoá</button></div><div class="grid"></div>`;
+  const grid = el.querySelector(".grid");
+  for (const [k, label] of FIELDS) {
+    if (k === "step" && st.active === "atr") continue;
+    const f = document.createElement("label");
+    f.className = "f";
+    f.innerHTML = `${label}<input inputmode="decimal">`;
+    const inp = f.querySelector("input");
+    inp.value = r[k] ?? "";
+    if (k === "lot" && n > 1) inp.placeholder = "như trên";
+    if (k === "sl") inp.placeholder = "không";
+    inp.oninput = () => { r[k] = inp.value; inp.classList.remove("bad"); el.classList.remove("bad"); };
+    inp.dataset.k = k;
+    grid.appendChild(f);
+  }
+  el.querySelector(".del").onclick = () => { st[st.active].rows.splice(idx, 1); render(); };
+  el.dataset.idx = idx;
+  return el;
 }
-function collect(list) {
-  return [...document.querySelectorAll("#" + list + " input")].map(num).filter(v => v !== null);
+
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => { st.active = t.dataset.p; render(); msg(""); });
+document.getElementById("swBuy").onchange = e => st[st.active].buy = e.target.checked;
+document.getElementById("swSell").onchange = e => st[st.active].sell = e.target.checked;
+document.querySelectorAll(".add").forEach(b => b.onclick = () => {
+  st[st.active].rows.push({ side: b.dataset.side });
+  render();
+  const cards = document.querySelectorAll("#" + b.dataset.side + " .rowcard");
+  cards[cards.length - 1].querySelector("input").focus();
+});
+function msg(t) { document.getElementById("msg").textContent = t; }
+
+// ── validation ──────────────────────────────────────────────
+function num(v) { v = String(v ?? "").trim().replace(",", "."); return v === "" ? null : Number(v); }
+
+function validate(name, p, markUi) {
+  const errs = [], out = [];
+  const lastLot = { buy: null, sell: null };
+  const bad = (i, k, text) => {
+    errs.push(`[${name}] ${text}`);
+    if (!markUi) return;
+    const card = document.querySelector(`.rowcard[data-idx="${i}"]`);
+    if (!card) return;
+    card.classList.add("bad");
+    if (k) card.querySelector(`input[data-k="${k}"]`)?.classList.add("bad");
+  };
+  const count = { buy: 0, sell: 0 };
+  p.rows.forEach((r, i) => {
+    const tag = `${r.side.toUpperCase()} #${++count[r.side]}`;
+    const v = {};
+    for (const [k] of FIELDS) v[k] = num(r[k]);
+    if (v.a == null || !(v.a > 0)) bad(i, "a", `${tag}: thiếu Range start`);
+    if (v.b == null || !(v.b > 0)) bad(i, "b", `${tag}: thiếu Range end`);
+    if (v.a > 0 && v.b > 0 && v.a >= v.b) bad(i, "b", `${tag}: Range start phải nhỏ hơn Range end`);
+    if (name === "Manual" && !(v.step > 0)) bad(i, "step", `${tag}: thiếu Step`);
+    if (!(v.max >= 1) || !Number.isInteger(v.max)) bad(i, "max", `${tag}: Max lệnh mở phải là số nguyên ≥ 1`);
+    if (!(v.tp > 0)) bad(i, "tp", `${tag}: TP bắt buộc`);
+    if (v.sl != null && !(v.sl > 0)) bad(i, "sl", `${tag}: SL không hợp lệ`);
+    let lot = v.lot;
+    if (lot == null) lot = lastLot[r.side];
+    if (!(lot > 0)) bad(i, "lot", `${tag}: thiếu Lot`);
+    else lastLot[r.side] = lot;
+    out.push({ i, tag, side: r.side, a: v.a, b: v.b, step: name === "Manual" ? v.step : 0,
+               max: v.max, tp: v.tp, sl: v.sl ?? 0, lot });
+  });
+  // same side: ranges must not overlap (ends inclusive)
+  for (const side of ["buy", "sell"]) {
+    const rs = out.filter(r => r.side === side && r.a < r.b).sort((x, y) => x.a - y.a);
+    for (let j = 1; j < rs.length; j++)
+      if (rs[j].a <= rs[j - 1].b)
+        bad(rs[j].i, "a", `${rs[j - 1].tag} (${rs[j - 1].a}–${rs[j - 1].b}) trùng range với ${rs[j].tag} (${rs[j].a}–${rs[j].b})`);
+  }
+  return { errs, rows: out };
 }
 
 document.getElementById("submit").onclick = () => {
-  const msg = document.getElementById("msg");
-  msg.textContent = "";
-  try {
-    const data = {
-      dca: collect("dca"),
-      tp: collect("tp"),
-      lot: num(document.getElementById("lot")),
-      pause: document.getElementById("pause").checked,
-    };
-    if (!tg || tg.platform === "unknown") throw new Error("Hãy mở form từ nút trong chat với bot.");
-    tg.sendData(JSON.stringify(data));   // closes the form, bot receives web_app_data
-  } catch (e) { msg.textContent = e.message; if (tg) tg.HapticFeedback?.notificationOccurred("error"); }
+  msg("");
+  document.querySelectorAll(".bad").forEach(e => e.classList.remove("bad"));
+  const names = { manual: "Manual", atr: "ATR" };
+  const res = {}, errs = [];
+  for (const k of ["manual", "atr"]) {
+    const r = validate(names[k], st[k], k === st.active);
+    res[k] = r.rows; errs.push(...r.errs);
+  }
+  if (st[st.active].rows.length === 0) errs.unshift(`[${names[st.active]}] profile đang chọn chưa có dòng nào`);
+  if (errs.length) { msg(errs.join("\n")); tg?.HapticFeedback?.notificationOccurred("error"); return; }
+
+  // compact payload: rows = [side, start, end, step, max, tp, sl, lot]
+  const pack = k => ({ buy: st[k].buy, sell: st[k].sell,
+    rows: res[k].map(r => [r.side === "buy" ? "B" : "S", r.a, r.b, r.step, r.max, r.tp, r.sl, r.lot]) });
+  const data = { v: 2, active: st.active, manual: pack("manual"), atr: pack("atr") };
+  if (!tg || tg.platform === "unknown") { msg("Hãy mở form từ nút trong chat với bot.\n" + JSON.stringify(data)); return; }
+  tg.sendData(JSON.stringify(data));
 };
+
+render();
 </script>
 </body>
 </html>
