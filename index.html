@@ -42,6 +42,8 @@
   label.f { display: flex; flex-direction: column; font-size: 11px; color: var(--hint); gap: 2px; }
   label.f input { width: 100%; min-width: 0; font-size: 16px; padding: 8px; border-radius: 7px;
                   border: 1px solid transparent; background: var(--bg); color: var(--fg); }
+  label.f select { width: 100%; min-width: 0; font-size: 16px; padding: 8px 4px; border-radius: 7px;
+                   border: 1px solid transparent; background: var(--bg); color: var(--fg); }
   label.f input:focus { outline: none; border-color: var(--accent); }
   label.f input.bad { border-color: var(--danger); }
   .add { width: 100%; border: 1px dashed currentColor; background: none; border-radius: 8px;
@@ -90,9 +92,11 @@ try {
 } catch (e) {}
 
 // Row fields. Lot blank = inherit from the row above (same side). SL blank = no SL.
+const CHOICES = { tp: ["3", "4", "5", "6"], lot: ["0.01", "0.02", "0.03", "0.04", "0.05"] };
+const DEFAULTS = { tp: "3", lot: "0.01" };
 const FIELDS = [
   ["a", "Range start"], ["b", "Range end"], ["step", "Step ($)"],
-  ["max", "Max lệnh mở"], ["tp", "TP ($) *"], ["sl", "SL ($)"],
+  ["max", "Max lệnh mở"], ["tp", "TP ($)"], ["sl", "SL ($)"],
   ["lot", "Lot"],
 ];
 
@@ -125,11 +129,21 @@ function rowEl(r, idx, n) {
     if (k === "step" && st.active === "atr") continue;
     const f = document.createElement("label");
     f.className = "f";
-    f.innerHTML = `${label}<input inputmode="decimal">`;
-    const inp = f.querySelector("input");
-    inp.value = r[k] ?? "";
-    if (k === "lot" && n > 1) inp.placeholder = "như trên";
-    if (k === "sl") inp.placeholder = "không";
+    let inp;
+    if (CHOICES[k]) {
+      const opts = [...CHOICES[k]];
+      if (r[k] == null || r[k] === "") r[k] = DEFAULTS[k];
+      const cur = String(Number(r[k]));
+      if (!opts.some(o => Number(o) === Number(cur))) opts.push(cur);  // keep an older saved value visible
+      f.innerHTML = `${label}<select>${opts.map(o => `<option value="${o}">${o}</option>`).join("")}</select>`;
+      inp = f.querySelector("select");
+      inp.value = opts.find(o => Number(o) === Number(cur));
+      inp.onchange = () => { r[k] = inp.value; };
+    } else {
+      f.innerHTML = `${label}<input inputmode="decimal">`;
+      inp = f.querySelector("input");
+      inp.value = r[k] ?? "";
+    }
     inp.oninput = () => { r[k] = inp.value; inp.classList.remove("bad"); el.classList.remove("bad"); };
     inp.dataset.k = k;
     grid.appendChild(f);
@@ -143,7 +157,7 @@ document.querySelectorAll(".tab").forEach(t => t.onclick = () => { st.active = t
 document.getElementById("swBuy").onchange = e => st[st.active].buy = e.target.checked;
 document.getElementById("swSell").onchange = e => st[st.active].sell = e.target.checked;
 document.querySelectorAll(".add").forEach(b => b.onclick = () => {
-  st[st.active].rows.push({ side: b.dataset.side });
+  st[st.active].rows.push({ side: b.dataset.side, ...DEFAULTS });
   render();
   const cards = document.querySelectorAll("#" + b.dataset.side + " .rowcard");
   cards[cards.length - 1].querySelector("input").focus();
