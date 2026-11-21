@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>EA Setting</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: var(--tg-theme-bg-color, #fff);
+    --fg: var(--tg-theme-text-color, #111);
+    --hint: var(--tg-theme-hint-color, #888);
+    --card: var(--tg-theme-secondary-bg-color, #f2f2f6);
+    --accent: var(--tg-theme-button-color, #2481cc);
+    --accent-fg: var(--tg-theme-button-text-color, #fff);
+    --danger: var(--tg-theme-destructive-text-color, #e5484d);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg);
+         font: 16px/1.4 -apple-system, system-ui, sans-serif; }
+  .card { background: var(--card); border-radius: 12px; padding: 12px; margin-bottom: 14px; }
+  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+       color: var(--hint); margin: 0 0 8px; display: flex; justify-content: space-between; }
+  .row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .row span { width: 22px; color: var(--hint); font-size: 13px; text-align: right; }
+  input { flex: 1; min-width: 0; font-size: 18px; padding: 10px 12px; border-radius: 8px;
+          border: 1px solid transparent; background: var(--bg); color: var(--fg); }
+  input:focus { outline: none; border-color: var(--accent); }
+  input.bad { border-color: var(--danger); }
+  .del { border: 0; background: none; color: var(--danger); font-size: 20px; padding: 4px 8px; }
+  .add { width: 100%; border: 1px dashed var(--accent); background: none; color: var(--accent);
+         border-radius: 8px; padding: 9px; font-size: 15px; }
+  .toggle { display: flex; justify-content: space-between; align-items: center; }
+  .toggle input { flex: none; width: 22px; height: 22px; }
+  #submit { width: 100%; padding: 14px; font-size: 17px; font-weight: 600; border: 0;
+            border-radius: 10px; background: var(--accent); color: var(--accent-fg); }
+  #msg { color: var(--danger); min-height: 1.4em; font-size: 14px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+  <div class="card"><h2>DCA <small id="nDca"></small></h2><div id="dca"></div>
+    <button class="add" data-list="dca">+ thêm giá DCA</button></div>
+  <div class="card"><h2>TP <small id="nTp"></small></h2><div id="tp"></div>
+    <button class="add" data-list="tp">+ thêm giá TP</button></div>
+  <div class="card"><h2>Lot</h2><div class="row"><input id="lot" inputmode="decimal" placeholder="0.01"></div></div>
+  <div class="card toggle"><label for="pause">Tạm dừng EA</label><input type="checkbox" id="pause"></div>
+  <div id="msg"></div>
+  <button id="submit">SUBMIT</button>
+
+<script>
+const tg = window.Telegram && Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+// Prefill: ?s=<json> from the bot (current settings)
+let cur = { dca: [""], tp: [""], lot: "", pause: false };
+try {
+  const s = new URLSearchParams(location.search).get("s");
+  if (s) cur = Object.assign(cur, JSON.parse(s));
+} catch (e) {}
+
+function addRow(list, val) {
+  const box = document.getElementById(list);
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML = '<span></span><input inputmode="decimal" placeholder="giá"><button class="del" type="button">✕</button>';
+  row.querySelector("input").value = val ?? "";
+  row.querySelector(".del").onclick = () => { row.remove(); renumber(); };
+  box.appendChild(row);
+  renumber();
+  return row.querySelector("input");
+}
+function renumber() {
+  for (const list of ["dca", "tp"]) {
+    const rows = document.querySelectorAll("#" + list + " .row");
+    rows.forEach((r, i) => r.querySelector("span").textContent = i + 1);
+    document.getElementById(list === "dca" ? "nDca" : "nTp").textContent = rows.length + " giá";
+  }
+}
+document.querySelectorAll(".add").forEach(b => b.onclick = () => addRow(b.dataset.list, "").focus());
+(cur.dca.length ? cur.dca : [""]).forEach(v => addRow("dca", v));
+(cur.tp.length ? cur.tp : [""]).forEach(v => addRow("tp", v));
+document.getElementById("lot").value = cur.lot;
+document.getElementById("pause").checked = !!cur.pause;
+
+function num(el) {
+  const v = el.value.trim().replace(",", ".");
+  if (v === "") return null;
+  const n = Number(v);
+  if (!isFinite(n) || n <= 0) { el.classList.add("bad"); throw new Error("Giá trị không hợp lệ: " + el.value); }
+  el.classList.remove("bad");
+  return n;
+}
+function collect(list) {
+  return [...document.querySelectorAll("#" + list + " input")].map(num).filter(v => v !== null);
+}
+
+document.getElementById("submit").onclick = () => {
+  const msg = document.getElementById("msg");
+  msg.textContent = "";
+  try {
+    const data = {
+      dca: collect("dca"),
+      tp: collect("tp"),
+      lot: num(document.getElementById("lot")),
+      pause: document.getElementById("pause").checked,
+    };
+    if (!tg || tg.platform === "unknown") throw new Error("Hãy mở form từ nút trong chat với bot.");
+    tg.sendData(JSON.stringify(data));   // closes the form, bot receives web_app_data
+  } catch (e) { msg.textContent = e.message; if (tg) tg.HapticFeedback?.notificationOccurred("error"); }
+};
+</script>
+</body>
+</html>
